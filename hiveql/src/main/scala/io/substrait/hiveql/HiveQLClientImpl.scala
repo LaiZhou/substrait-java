@@ -4,7 +4,7 @@ import org.apache.calcite.plan.RelOptUtil
 import org.apache.calcite.rel.RelNode
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.metadata.Hive
-import org.apache.hadoop.hive.ql.parse.{ASTNode, ParseException, ParseUtils, HiveCalcitePlanner}
+import org.apache.hadoop.hive.ql.parse.{ASTNode, HiveCalcitePlanner, ParseException, ParseUtils}
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.ql.{Context, QueryState}
 
@@ -92,6 +92,7 @@ private[hiveql] class HiveQLClientImpl(config: Map[String, String],
         val sem = new HiveCalcitePlanner(queryState)
         sem.initCtx(ctx)
         sem.init(true)
+        val op = sem.genOperator(tree)
         val plan = sem.genLogicalPlan(tree)
         logger.info(RelOptUtil.toString(plan))
         plan

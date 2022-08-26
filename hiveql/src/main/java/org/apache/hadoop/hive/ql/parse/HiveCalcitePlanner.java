@@ -145,6 +145,7 @@ import org.apache.hadoop.hive.ql.Context;
 import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.QueryProperties;
 import org.apache.hadoop.hive.ql.QueryState;
+import org.apache.hadoop.hive.ql.cache.results.QueryResultsCache;
 import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.FunctionInfo;
@@ -344,6 +345,7 @@ public class HiveCalcitePlanner extends SemanticAnalyzer {
   public RelNode genLogicalPlan(ASTNode ast) throws SemanticException {
     LOG.info("Starting generating logical plan");
     PreCboCtx cboCtx = new PreCboCtx();
+    // 1. Generate Resolved Parse tree from syntax tree
     //change the location of position alias process here
     processPositionAlias(ast);
     if (!genResolvedParseTree(ast, cboCtx)) {
@@ -366,6 +368,27 @@ public class HiveCalcitePlanner extends SemanticAnalyzer {
     LOG.info("Finished generating logical plan");
     return resPlan;
   }
+
+  public Operator genOperator(ASTNode ast) throws SemanticException {
+    LOG.info("Starting Semantic Analysis");
+    PreCboCtx plannerCtx = new PreCboCtx();
+    // 1. Generate Resolved Parse tree from syntax tree
+    //change the location of position alias process here
+    processPositionAlias(ast);
+    if (!genResolvedParseTree(ast, plannerCtx)) {
+      return null;
+    }
+    //remove orderby without limit from subquery
+//    if (HiveConf.getBoolVar(conf, ConfVars.HIVE_REMOVE_ORDERBY_IN_SUBQUERY)) {
+//      for (String alias : qb.getSubqAliases()) {
+//        removeOBInSubQuery(qb.getSubqForAlias(alias));
+//      }
+//    }
+
+    Operator sinkOp = genOPTree(ast, plannerCtx);
+    return sinkOp;
+  }
+
 
   public static RelOptPlanner createPlanner(HiveConf conf) {
     return createPlanner(conf, new HashSet<RelNode>(), new HashSet<RelNode>());
@@ -421,7 +444,7 @@ public class HiveCalcitePlanner extends SemanticAnalyzer {
         queryForCbo = cboCtx.nodeOfInterest; // nodeOfInterest is the query
       }
       checkCanCBOHandleAst(queryForCbo, getQB(), cboCtx);
-      runCBO=true;
+      runCBO = true;
       if (queryProperties.hasMultiDestQuery()) {
         handleMultiDestQuery(ast, cboCtx);
       }

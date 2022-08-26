@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 public class HiveQLPlanDriverTest {
 
   @Test
-  public void testInit() throws Throwable{
+  public void testInit() throws Throwable {
     String hiveLibDir = "/mnt/data/jvm/bigdata/substrait-java/hiveql/lib";
     File hiveJarsFile = new File(hiveLibDir);
     List<String> resourceUrls = Arrays.stream(hiveJarsFile.listFiles()).map(File::getAbsolutePath)
@@ -28,10 +28,15 @@ public class HiveQLPlanDriverTest {
       hiveQLClient = HiveQLUtils.newHiveQLClient(
           Map.of("hive.metastore.uris", "thrift://127.0.0.1:9083", "hive.exec.local.scratchdir",
               scratchdir), resourceUrls);
+//      RelNode plan = hiveQLClient.plan(
+//          "SELECT p_partkey, p_size\n"
+//              + "FROM part p\n"
+//              + "WHERE p_size <\n"
+//              + "      (SELECT sum(l_orderkey)\n"
+//              + "       FROM lineitem l\n"
+//              + "       WHERE l.l_partkey = p.p_partkey)\n");
       RelNode plan = hiveQLClient.plan(
           "select lower(l_comment) from lineitem where length(l_comment)>0 limit 10");
-//      RelNode plan2 = hiveQLClient.plan(
-//          "select lower(l_comment) from lineitem where length(l_comment)>0 limit 10");
       System.out.println(plan.toString());
     } finally {
       if (hiveQLClient != null) {
